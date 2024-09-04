@@ -1,0 +1,15 @@
+.menu{
+    color: #F2E4D2;
+
+    
+   
+}
+
+.menu .MuiListItemText-primary {
+    font-size: 1.2rem; /* Adjust the font size as needed */
+  }
+
+  .menu .light_bg{
+    background-color: #333849;
+  }
+  

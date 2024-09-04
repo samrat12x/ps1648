@@ -1,0 +1,81 @@
+/* src/chat.css */
+/* Animation for soft bouncing background image */
+.chat-interface {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    max-width: 100%;
+    position: relative; /* Ensure the container is positioned relative to its pseudo-element */
+    overflow: hidden; /* Prevent pseudo-element overflow from affecting layout */
+  }
+  
+  .chat-interface::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("src/assets/robo_logo.png");
+    background-repeat: no-repeat;
+    background-size: 50vh;
+    background-position: center center;
+    animation: bounceBackground 3s ease-in-out infinite;
+  
+  }
+  
+  /* Animation for soft bouncing background image */
+  @keyframes bounceBackground {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px); /* Adjust the bounce height as needed */
+    }
+  }
+  
+  
+  
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+   
+    word-break: break-word; /* Ensures long words break to prevent overflow */
+    
+  }
+  .Doctorcards{
+    display: flex;
+  }
+  
+  .input-container {
+    display: flex;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-top: 1px solid #ccc;
+  }
+  
+  /* Animation for new messages */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .new-message {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  .BotMsg{
+    
+  
+  }
+  .UserMsg{
+    
+  }

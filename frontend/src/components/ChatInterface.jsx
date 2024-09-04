@@ -3,7 +3,7 @@ import { TextField, Button, Paper, Box } from '@mui/material';
 import axios from 'axios';
 //import DoctorCard from './DoctorCard'
 //import Message from './Message';
-//import './chat.css'; // Import the CSS file
+import './chat.css'; // Import the CSS file
 
 
 export default function ChatInterface() {
