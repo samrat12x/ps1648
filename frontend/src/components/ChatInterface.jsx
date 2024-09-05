@@ -10,6 +10,10 @@ export default function ChatInterface() {
     { text: 'Hello, Welcome to the Exhibition Booking System. How can I assist you today?', isNew: false, isBot: true },
   ]);
 
+  const[isChatON,setChatOn]=useState(false);
+
+  
+
   // Hook to store exhibition cards data
   const [exhibitionCards, setExhibitionCards] = useState([]);
 
@@ -26,6 +30,7 @@ export default function ChatInterface() {
 
   // Function to handle sending a message
   const sendMessage = useCallback(async () => {
+    setChatOn(true);
     if (inputValue.trim()) {
       const newMessage = { text: inputValue, isNew: true, isBot: false };
       setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -103,7 +108,7 @@ export default function ChatInterface() {
   }, [messages, exhibitionCards]);
 
   return (
-    <Paper elevation={3} className="chat-interface">
+    <Paper elevation={3}  className={`chat-interface ${isChatON ? 'chat-active' : ''}`}>
       <Box
         className="messages"
         sx={{
