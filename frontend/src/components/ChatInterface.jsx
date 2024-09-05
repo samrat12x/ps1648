@@ -1,35 +1,38 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { TextField, Button, Paper, Box } from '@mui/material';
 import axios from 'axios';
-//import DoctorCard from './DoctorCard'
-//import Message from './Message';
+import ExhibitionCard from './ExhibitionCard'; // Import the ExhibitionCard component
 import './chat.css'; // Import the CSS file
 
-
 export default function ChatInterface() {
+  // Initial message for the chat interface
   const [messages, setMessages] = useState([
-    { text: 'Hello , Welcome to SwasthCare. Tell us your problem?', isNew: false , isBot:true},
+    { text: 'Hello, Welcome to the Exhibition Booking System. How can I assist you today?', isNew: false, isBot: true },
   ]);
 
-  const [DoctorCards,setDoctorCards]=useState([]);
+  // Hook to store exhibition cards data
+  const [exhibitionCards, setExhibitionCards] = useState([]);
 
+  // Hook to store user input value
   const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef(null); // Explicitly specifying the type of ref
+  const messagesEndRef = useRef(null);
 
-
-
+  // Function to scroll to the bottom of the chat
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  // Function to handle sending a message
   const sendMessage = useCallback(async () => {
     if (inputValue.trim()) {
-      const newMessage = { text: inputValue, isNew: true , isBot: false };
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      setDoctorCards(" ") 
+      const newMessage = { text: inputValue, isNew: true, isBot: false };
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setExhibitionCards([]); // Clear previous cards when a new message is sent
+
       try {
+        // Send a request to the backend with the user's input
         const response = await axios.post(
           'http://127.0.0.1:5000/',
           { user_prompt: inputValue },
@@ -41,80 +44,63 @@ export default function ChatInterface() {
           }
         );
 
-
- // Parse the JSON response
- try{
- const responseData = JSON.parse(response.data.response);
- console.log(responseData)
-         // Check if the response is doctor information
-      if (responseData && responseData.name && responseData.title) {
-//card logic
-
-
-        // const botResponse = { text:  response.data.response+'card invoked', isNew: false }; // You might want to format this data appropriately
-        // setMessages(prevMessages => [...prevMessages, botResponse]);
-        const cardComponents = [];
-        for (const key in responseData.name) {
-          if (Object.prototype.hasOwnProperty.call(responseData.name, key)) {
-            const doctorId = key;
-            const doctorName = responseData.name[doctorId];
-            const doctorTitle = responseData.title[doctorId];
-            const doctorPhone = responseData.phone[doctorId];
-            const doctorProfilePic = responseData.profile_pic[doctorId];
-            const doctorExperience = responseData.experience[doctorId];
-            const doctorStars = responseData.stars[doctorId];
-            const doctorPatientsHandled = responseData.patients_handled[doctorId];
-            const doctorLocation = responseData.location[doctorId];
-            const doctorGender = responseData.gender[doctorId];
-        
-            const cardComponent = (
-              <DoctorCard
-                key={doctorId}
-                name={doctorName}
-                title={doctorTitle}
-                phone={doctorPhone}
-                profile_pic={doctorProfilePic}
-                experience={doctorExperience}
-                stars={doctorStars}
-                patients_handled={doctorPatientsHandled}
-                location={doctorLocation}
-                gender={doctorGender}
-              />
-            );
-            cardComponents.push(cardComponent);
+        try {
+          console.log("Response Data:", response.data.response);
+          const responseData = JSON.parse(response.data.response);
+          console.log("Parsed Data:", responseData);
+      
+          const exhibitionIds = Object.keys(responseData['Exhibition ID']);
+          
+          if (exhibitionIds.length > 0) {
+              const cardComponents = [];
+              exhibitionIds.forEach((exhibitionId) => {
+                  const exhibitionName = responseData['Exhibition Name'][exhibitionId] || 'Unknown';
+                  const exhibitionLocation = responseData['Location'][exhibitionId] || 'Unknown';
+                  const exhibitionType = responseData['Type'][exhibitionId] || 'Unknown';
+                  const exhibitionStartTime = responseData['Start Time'][exhibitionId] || 'Unknown';
+                  const exhibitionEndTime = responseData['End Time'][exhibitionId] || 'Unknown';
+                  const exhibitionDate = responseData['Date'][exhibitionId] || 'Unknown';
+                  const displayImage = "src/assets/exh_pic.png"; // Assuming displayImage field is there
+      
+                  const cardComponent = (
+                      <ExhibitionCard
+                          key={exhibitionId}
+                          name={exhibitionName}
+                          location={exhibitionLocation}
+                          type={exhibitionType}
+                          startTime={exhibitionStartTime}
+                          endTime={exhibitionEndTime}
+                          date={exhibitionDate}
+                          displayImage={displayImage}
+                      />
+                  );
+                  cardComponents.push(cardComponent);
+              });
+              setExhibitionCards(cardComponents);
+          } else {
+              throw new Error("No exhibition IDs found");
           }
-        }
-        
-        setDoctorCards(cardComponents);
-
-        
-      }}catch(error){
-
-      
-
-        //simple message response
-        const botResponse = { text: response.data.response , isNew: false , isBot: true};
-        setMessages(prevMessages => [...prevMessages, botResponse]);
-      
-      }
-        
-  
-
-
-
       } catch (error) {
+          console.error("Error occurred:", error);
+          console.log("if  exhibitions cards not present ,treat it as message")
+          const botResponse = { text: response.data.response, isNew: false, isBot: true };
+          setMessages((prevMessages) => [...prevMessages, botResponse]);
+      }
+      } catch (error) {
+        // Handle error if the API call fails
         console.error('Error sending message:', error);
-        const errorMessage = { text: 'Error: Unable to get response from the server.', isNew: false ,isBot: true};
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        const errorMessage = { text: 'Error: Unable to get response from the server.', isNew: false, isBot: true };
+        setMessages((prevMessages) => [...prevMessages, errorMessage]);
       }
 
-      setInputValue('');
+      setInputValue(''); // Clear the input field after sending the message
     }
   }, [inputValue]);
 
+  // Scroll to the bottom of the chat when a new message or card is added
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, exhibitionCards]);
 
   return (
     <Paper elevation={3} className="chat-interface">
@@ -129,24 +115,31 @@ export default function ChatInterface() {
           },
         }}
       >
-        {/* {messages.map((msg, index) => (
-        //   <Message key={index} text={msg.text} isNew={msg.isNew} isBot={msg.isBot} />
-        ))} */}
+        {/* Display the messages */}
+        {messages.map((msg, index) => (
+          <div key={index} className={`message ${msg.isBot ? 'bot-message' : 'user-message'}`}>
+            {msg.text}
+          </div>
+        ))}
 
-<div className='Doctorcards'>{DoctorCards}</div>
+        {/* Display the exhibition cards */}
+        <div className="exhibition-cards">{exhibitionCards}</div>
 
+        {/* Ref for scrolling to the bottom */}
         <div ref={messagesEndRef} />
       </Box>
+      
+      {/* Input box and send button */}
       <Box className="input-container">
         <TextField
           value={inputValue}
-          //added: pressing  enter key is not a subsitution for pressing send button
-          onKeyDown={(event)=>{if (event.key === 'Enter') {
-            // Handle the Enter key press
-          sendMessage()
-            // You can perform any action here, like submitting a form, etc.
-          }}}
-          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              // Handle the Enter key press
+              sendMessage();
+            }
+          }}
+          onChange={(e) => setInputValue(e.target.value)}
           label="Type your message..."
           variant="outlined"
           fullWidth

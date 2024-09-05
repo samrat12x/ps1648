@@ -79,3 +79,46 @@
   .UserMsg{
     
   }
+
+  .exhibition-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .exhibition-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  .message {
+    margin: 10px 0;
+  }
+  
+  .bot-message {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    margin-left: auto;
+    width: fit-content;
+  }
+  
+  .user-message {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-right: auto;
+    width: fit-content;
+  }
+  
+  .exhibition-cards {
+    display: flex;
+    flex-direction: column;
+  }
+  
