@@ -1,158 +1,234 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { TextField, Button, Paper, Box } from '@mui/material';
+import { TextField, Button, Paper, Box, Dialog, DialogContent, DialogTitle, Stepper, Step, StepLabel, CircularProgress } from '@mui/material';
 import axios from 'axios';
-import ExhibitionCard from './ExhibitionCard'; // Import the ExhibitionCard component
-import './chat.css'; // Import the CSS file
+import ExhibitionCard from './ExhibitionCard';
+import { useNavigate } from 'react-router-dom'; 
+import './chat.css';
 
 export default function ChatInterface() {
-  // Initial message for the chat interface
   const [messages, setMessages] = useState([
     { text: 'Hello, Welcome to the Exhibition Booking System. How can I assist you today?', isNew: false, isBot: true },
   ]);
-
-  const[isChatON,setChatOn]=useState(false);
-
   
-
-  // Hook to store exhibition cards data
+  const [isChatON, setChatOn] = useState(false);
   const [exhibitionCards, setExhibitionCards] = useState([]);
-
-  // Hook to store user input value
   const [inputValue, setInputValue] = useState('');
+  const [openBookingModal, setOpenBookingModal] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [tickets, setTickets] = useState({ adults: 0, children: 0 });
+  const [email, setEmail] = useState('');
+  const [selectedExhibition, setSelectedExhibition] = useState(null);
+  const [loading, setLoading] = useState(false); // New loading state
   const messagesEndRef = useRef(null);
 
-  // Function to scroll to the bottom of the chat
+  const navigate = useNavigate();
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  // Function to handle sending a message
+  const handleCardClick = (exhibitionId) => {
+    setSelectedExhibition(exhibitionId);
+    setOpenBookingModal(true);
+  };
+
   const sendMessage = useCallback(async () => {
     setChatOn(true);
     if (inputValue.trim()) {
       const newMessage = { text: inputValue, isNew: true, isBot: false };
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setExhibitionCards([]); // Clear previous cards when a new message is sent
+      setExhibitionCards([]);
 
       try {
-        // Send a request to the backend with the user's input
-        const response = await axios.post(
-          'http://127.0.0.1:5000/',
-          { user_prompt: inputValue },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*', // Add any other headers you need
-            },
-          }
-        );
+        const response = await axios.post('http://127.0.0.1:5000/', { user_prompt: inputValue });
+        const responseData = JSON.parse(response.data.response);
+        const exhibitionIds = Object.keys(responseData['Exhibition ID']);
+        const cardComponents = exhibitionIds.map((exhibitionId) => {
+          const exhibitionName = responseData['Exhibition Name'][exhibitionId] || 'Unknown';
+          const exhibitionLocation = responseData['Location'][exhibitionId] || 'Unknown';
+          const exhibitionType = responseData['Type'][exhibitionId] || 'Unknown';
+          const exhibitionStartTime = responseData['Start Time'][exhibitionId] || 'Unknown';
+          const exhibitionEndTime = responseData['End Time'][exhibitionId] || 'Unknown';
+          const exhibitionDate = responseData['Date'][exhibitionId] || 'Unknown';
+          const displayImage = 'src/assets/exh_pic.png'; 
 
-        try {
-          console.log("Response Data:", response.data.response);
-          const responseData = JSON.parse(response.data.response);
-          console.log("Parsed Data:", responseData);
-      
-          const exhibitionIds = Object.keys(responseData['Exhibition ID']);
-          
-          if (exhibitionIds.length > 0) {
-              const cardComponents = [];
-              exhibitionIds.forEach((exhibitionId) => {
-                  const exhibitionName = responseData['Exhibition Name'][exhibitionId] || 'Unknown';
-                  const exhibitionLocation = responseData['Location'][exhibitionId] || 'Unknown';
-                  const exhibitionType = responseData['Type'][exhibitionId] || 'Unknown';
-                  const exhibitionStartTime = responseData['Start Time'][exhibitionId] || 'Unknown';
-                  const exhibitionEndTime = responseData['End Time'][exhibitionId] || 'Unknown';
-                  const exhibitionDate = responseData['Date'][exhibitionId] || 'Unknown';
-                  const displayImage = "src/assets/exh_pic.png"; // Assuming displayImage field is there
-      
-                  const cardComponent = (
-                      <ExhibitionCard
-                          key={exhibitionId}
-                          name={exhibitionName}
-                          location={exhibitionLocation}
-                          type={exhibitionType}
-                          startTime={exhibitionStartTime}
-                          endTime={exhibitionEndTime}
-                          date={exhibitionDate}
-                          displayImage={displayImage}
-                      />
-                  );
-                  cardComponents.push(cardComponent);
-              });
-              setExhibitionCards(cardComponents);
-          } else {
-              throw new Error("No exhibition IDs found");
-          }
+          return (
+            <ExhibitionCard
+              key={exhibitionId}
+              name={exhibitionName}
+              location={exhibitionLocation}
+              type={exhibitionType}
+              startTime={exhibitionStartTime}
+              endTime={exhibitionEndTime}
+              date={exhibitionDate}
+              displayImage={displayImage}
+              onClick={() => handleCardClick(exhibitionId)} 
+            />
+          );
+        });
+
+        setExhibitionCards(cardComponents);
       } catch (error) {
-          console.error("Error occurred:", error);
-          console.log("if  exhibitions cards not present ,treat it as message")
-          const botResponse = { text: response.data.response, isNew: false, isBot: true };
-          setMessages((prevMessages) => [...prevMessages, botResponse]);
-      }
-      } catch (error) {
-        // Handle error if the API call fails
-        console.error('Error sending message:', error);
-        const errorMessage = { text: 'Error: Unable to get response from the server.', isNew: false, isBot: true };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+        setMessages((prevMessages) => [...prevMessages, { text: 'Error: Unable to get response from the server.', isNew: false, isBot: true }]);
       }
 
-      setInputValue(''); // Clear the input field after sending the message
+      setInputValue('');
     }
   }, [inputValue]);
 
-  // Scroll to the bottom of the chat when a new message or card is added
+  const handleFormSubmit = async () => {
+    setLoading(true); // Start loading
+    try {
+      await axios.post('http://127.0.0.1:5000/sendEmailConfirmation', {
+        exhibitionId: selectedExhibition,
+        tickets,
+        email,
+      });
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { text: 'Booking successfully completed!', isNew: false, isBot: true },
+      ]);
+
+      // Clear all the states before navigating
+      setOpenBookingModal(false);
+      setActiveStep(0);
+      setTickets({ adults: 0, children: 0 });
+      setEmail('');
+      setSelectedExhibition(null);
+      setMessages([
+        { text: 'Hello, Welcome to the Exhibition Booking System. How can I assist you today?', isNew: false, isBot: true },
+      ]);
+      setExhibitionCards([]);
+      setInputValue('');
+      setChatOn(false);
+
+      navigate('/success');
+    } catch (error) {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { text: 'Error: Unable to complete booking.', isNew: false, isBot: true },
+      ]);
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, exhibitionCards]);
 
+  const renderStepContent = (step) => {
+    switch (step) {
+      case 0:
+        return (
+          <>
+            <TextField
+              label="Adult Tickets"
+              type="number"
+              value={tickets.adults}
+              onChange={(e) => setTickets({ ...tickets, adults: e.target.value })}
+              fullWidth
+              inputProps={{ min: 0, max: 10 }}
+            />
+            <TextField
+              label="Child Tickets"
+              type="number"
+              value={tickets.children}
+              onChange={(e) => setTickets({ ...tickets, children: e.target.value })}
+              fullWidth
+              inputProps={{ min: 0, max: 10 }}
+            />
+          </>
+        );
+      case 1:
+        return (
+          <TextField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <Paper elevation={3}  className={`chat-interface ${isChatON ? 'chat-active' : ''}`}>
-      <Box
-        className="messages"
-        sx={{
-          '& .MuiPaper-root': {
-            bgcolor: 'transparent',
-          },
-          '& .MuiTypography-root': {
-            fontWeight: 'bolder',
-          },
-        }}
-      >
-        {/* Display the messages */}
+    <Paper elevation={3} className={`chat-interface ${isChatON ? 'chat-active' : ''}`}>
+      <Box className="messages">
         {messages.map((msg, index) => (
           <div key={index} className={`message ${msg.isBot ? 'bot-message' : 'user-message'}`}>
             {msg.text}
           </div>
         ))}
 
-        {/* Display the exhibition cards */}
-        <div className="exhibition-cards">{exhibitionCards}</div>
+        <div className="exhibition-cards">
+          {exhibitionCards}
+        </div>
 
-        {/* Ref for scrolling to the bottom */}
         <div ref={messagesEndRef} />
       </Box>
-      
-      {/* Input box and send button */}
+
       <Box className="input-container">
         <TextField
           value={inputValue}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              // Handle the Enter key press
-              sendMessage();
-            }
-          }}
           onChange={(e) => setInputValue(e.target.value)}
           label="Type your message..."
           variant="outlined"
           fullWidth
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              sendMessage();
+            }
+          }}
         />
         <Button variant="contained" color="primary" onClick={sendMessage} style={{ marginLeft: '10px' }}>
           Send
         </Button>
       </Box>
+
+      {/* Modal for booking tickets */}
+      <Dialog open={openBookingModal} onClose={() => setOpenBookingModal(false)} fullWidth>
+        <DialogTitle>Book Tickets</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            <Step>
+              <StepLabel>Select Tickets</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>Enter Email</StepLabel>
+            </Step>
+          </Stepper>
+
+          {renderStepContent(activeStep)}
+
+          <Box mt={2}>
+            <Button
+              disabled={activeStep === 0}
+              onClick={() => setActiveStep(activeStep - 1)}
+            >
+              Back
+            </Button>
+            <Button
+              onClick={() => {
+                if (activeStep === 1) {
+                  handleFormSubmit();
+                } else {
+                  setActiveStep(activeStep + 1);
+                }
+              }}
+              disabled={loading} // Disable button while loading
+            >
+              {loading ? <CircularProgress size={24} /> : (activeStep === 1 ? 'Submit' : 'Next')} {/* Show spinner while loading */}
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Paper>
   );
 }

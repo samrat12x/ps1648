@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Chatbot from './components/Chatbot'
-
+import SuccessTick from './components/SuccessTick';
 function App() {
  
 
@@ -13,7 +13,7 @@ function App() {
         <Routes>
           
           <Route path="/" element={<Chatbot />} />
-          {/* <Route path="/calendar" element={<Calendar />} /> */}
+     <Route path="/success" element={<SuccessTick />} /> 
           {/* <Route path="/bookingsuccess" element={<BookingSuccess />} /> */}
         </Routes>
       </Router>
