@@ -43,8 +43,30 @@ export default function ChatInterface() {
 
       try {
         const response = await axios.post('http://127.0.0.1:5000/', { user_prompt: inputValue });
-        const responseData = JSON.parse(response.data.response);
-        const exhibitionIds = Object.keys(responseData['Exhibition ID']);
+console.log(response)
+if(response.data.response.text){
+//{
+//   "response": {
+//     "text": "JSON (JavaScript Object Notation) is a lightweight data interchange format that is easy for humans to read and write and easy for machines to parse and generate. Would you like to know more about how museums use JSON in their operations?"
+// }
+// }
+setMessages((prevMessages) => [
+  ...prevMessages,
+  { text: response.data.response.text, isNew: false, isBot: true }
+]);
+
+
+  console.log(response.data.response.text)
+}else{
+//   {
+//     "response": "{\"Exhibition ID\":{\"13\":\"EXH014\",\"12\":\"EXH013\",\"17\":\"EXH018\",\"9\":\"EXH010\",\"8\":\"EXH009\"},\"Exhibition Name\":{\"13\":\"Space Explorers\",\"12\":\"Gurgaon Contemporary Art\",\"17\":\"Ahmedabad Textile Heritage\",\"9\":\"World of Robots\",\"8\":\"Impressionist Masters\"},\"Type\":{\"13\":\"Science\",\"12\":\"Art\",\"17\":\"History\",\"9\":\"Science\",\"8\":\"Art\"},\"Location\":{\"13\":\"Gurgaon\",\"12\":\"Gurgaon\",\"17\":\"Ahmedabad\",\"9\":\"Mumbai\",\"8\":\"Mumbai\"},\"Start Time\":{\"13\":\"9:30 AM\",\"12\":\"10:30 AM\",\"17\":\"10:00 AM\",\"9\":\"10:00 AM\",\"8\":\"9:00 AM\"},\"End Time\":{\"13\":\"6:30 PM\",\"12\":\"6:00 PM\",\"17\":\"5:30 PM\",\"9\":\"6:00 PM\",\"8\":\"5:00 PM\"},\"Date\":{\"13\":\"2024-09-25\",\"12\":\"2024-09-18\",\"17\":\"2024-09-15\",\"9\":\"2024-09-12\",\"8\":\"2024-09-14\"}}"
+// }
+//  
+ const responseData = JSON.parse(response.data.response);
+  const exhibitionIds = Object.keys(responseData['Exhibition ID']);
+ 
+        
+        
         const cardComponents = exhibitionIds.map((exhibitionId) => {
           const exhibitionName = responseData['Exhibition Name'][exhibitionId] || 'Unknown';
           const exhibitionLocation = responseData['Location'][exhibitionId] || 'Unknown';
@@ -70,7 +92,25 @@ export default function ChatInterface() {
         });
 
         setExhibitionCards(cardComponents);
+
+ 
+}       console.log("parsing mein error aya?")
+  //       try{
+  //         
+  //         // raises exception if its plain text(parsing fails)
+  //       }catch(error){
+  //         console.log("inner catch ran")
+  
+  //       }
+        
+
+        
+
+ 
+
+      
       } catch (error) {
+        console.log("outter catch ran")
         setMessages((prevMessages) => [...prevMessages, { text: 'Error: Unable to get response from the server.', isNew: false, isBot: true }]);
       }
 
