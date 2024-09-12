@@ -8,7 +8,7 @@ steps to run frontend server
 - run the command "npm run dev "
  
 steps to run backend server
--cd to backend directory
--"pip install -r /requirements.txt  "   // this download all python modules mentioned in requirement.txt file
--activate the virtual environment  using the command " venv\Scripts\activate"
--run the command "python app.py"
+- cd to backend directory
+- "pip install -r /requirements.txt  "   // this download all python modules mentioned in requirement.txt file
+- activate the virtual environment  using the command " venv\Scripts\activate"
+- run the command "python app.py"
